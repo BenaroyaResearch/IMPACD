@@ -22,7 +22,10 @@ a list with all gate objects.
 A function that takes a data frame with gate definition (presumably an excel
 exported from flowJo), and returns a list. First element in the list is clean
 data frame that contains all information about the gates and second element
-is a list with all gate objects.
+is a list with all gate objects. For every entry in \code{gate_defintion} a
+positive and a negative gate object will be created, e.g. an entry for \code{CD3}
+will return \verb{CD3+} and \verb{CD3-}. If it is a logical gate, this will also take
+care of the generation for subgates that might be necessary.
 }
 \examples{
 # Extract the transformation list from flowJo workspace

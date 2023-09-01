@@ -81,7 +81,10 @@ convert_to_numeric = function(coordinates) {
 #' A function that takes a data frame with gate definition (presumably an excel
 #' exported from flowJo), and returns a list. First element in the list is clean
 #' data frame that contains all information about the gates and second element 
-#' is a list with all gate objects.
+#' is a list with all gate objects. For every entry in `gate_defintion` a 
+#' positive and a negative gate object will be created, e.g. an entry for `CD3`
+#' will return `CD3+` and `CD3-`. If it is a logical gate, this will also take 
+#' care of the generation for subgates that might be necessary.
 #'
 #' @param gate_definitions data frame with gate definitions, must contain the 
 #' following columns: `Annotation` (name of gate, eg. CD3), `Marker Type`, 

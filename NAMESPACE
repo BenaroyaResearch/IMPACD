@@ -2,7 +2,10 @@
 
 export(cleanPopulations)
 export(generateStatistics)
+export(level1Gating)
+export(level2Gating)
 export(modifierAnalysis)
 export(processGates)
 export(processGatingPaths)
+export(rootLevelGating)
 export(summarizePopulations)
