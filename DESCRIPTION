@@ -1,0 +1,15 @@
+Package: IMPACD
+Title: Iterative Machine-assisted Permutational Analysis of Cytometry Data
+Version: 0.0.0.9000
+Authors@R: 
+    person("Stephan", "Pribitzer", , "spribitzer@benaroyaresearch.org", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-4124-0484"))
+Description: IMPACD is a software tool designed to enable high-rigor analyses of multiplex immunophenotyping datasets using rapid and deep permutational analyses  of digital gating strategies (such as manual gating). It performs exhaustive permutational analysis of all markers without any down-sampling to elucidate cellular subsets with statistically significant frequency differences between  cohorts, including robust multiple test correction.
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    use_mit_license()
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Depends:
+    dplyr,
+    stringr
