@@ -246,6 +246,7 @@ modifierAnalysis = function(stats, counts, counts_summary, condition_,  p_cutoff
   report = c()
   removed_from_report = c()
   
+  
   # Find all the nodes that we have
   # First remove + and -, find uniques, and then readd +/- in regexp compatible form 
   nodes = unique(str_remove(dplyr::filter(stats, depth > 0)$terminal_node, "\\+|\\-"))
@@ -349,7 +350,8 @@ modifierAnalysis = function(stats, counts, counts_summary, condition_,  p_cutoff
         # In this case, we can assume that the observed difference in the node is driven by the parent.
         # We need to make sure that a) there is ONLY ONE parent that is significant and b) that this parent shows no difference in the distribution of values between itself and the subpopulation
         # We only want to report the parent, and remove the node from the report (in case it has been added previously by a higher gating depth)
-        report = dplyr::filter(report, path != population_$path)
+        
+        # report = dplyr::filter(report, path != population_$path)
         # The parent is getting reported outside the if condition
         
         # For debugging reasons, I am also keeping track of subpopulations that get removed

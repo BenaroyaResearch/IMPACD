@@ -2,6 +2,7 @@
 
 export(cleanPopulations)
 export(generateStatistics)
+export(modifierAnalysis)
+export(processGates)
 export(processGatingPaths)
-export(report_populations)
 export(summarizePopulations)
