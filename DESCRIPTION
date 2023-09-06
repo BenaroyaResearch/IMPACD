@@ -13,4 +13,9 @@ RoxygenNote: 7.2.3
 Depends:
     dplyr,
     stringr,
-    flowCore, CytoML, flowWorkspace, CytoExploreR
+    flowCore,
+    CytoML,
+    flowWorkspace,
+    CytoExploreR,
+    R (>= 2.10)
+LazyData: true
