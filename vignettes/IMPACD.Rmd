@@ -270,12 +270,12 @@ To help identify potentially interesting subpopulations `IMPACD` provides the `m
 
 >q Describe modifier analysis here
 
-```{r modifier analysis}
-
+```{r modifier analysis, message=FALSE, results=FALSE}
 report = modifierAnalysis(stats, counts, summary, "DSRegistry", p_cutoff = 0.1)
+```
 
+```{r modifiere analysis results}
 head(report)
-
 ```
 
 This step significantly reduced the number of populations that are being reported. Note that `modifierAnalysis` returns all populations that had a not-adjusted p-value of `< p_cutoff`. You might need to filter the results further down to significant adjusted p-values.
