@@ -159,7 +159,7 @@ level1Gating = function(gs, leafs, gate_metadata, gates, node) {
 #' from `rootLevelGating`
 #' @param max_depth maximum depth for gating, `default = 3`. Warning, increasing
 #' this might take very, very long.
-#' @param level1_nodes can be provided to restrict the space for the first level
+#' @param level1_nodes optional, can be provided to restrict the space for the first level
 #' gating, else all `leafs` will be gated, `default = NULL`
 #' @param cellcountCutoff minimum number of cells for a population to continue going down the tree
 #' @return A data frame with all gated paths.
@@ -238,7 +238,7 @@ level2Gating = function(gs, leafs, gate_metadata, gates, starting_node = "root",
   message("Recalculating population counts")
   recompute(gs)
 
-  return(list(gs, paths))
+  return(paths)
 }
 
 filter_low_count_paths = function(counts, gating_paths, cellcountCutoff = 30) {
