@@ -213,9 +213,11 @@ generateStatistics = function(counts, summary, control, studyGroups) {
     combined.stats[[ipath]] = stats
   }
 
+  close(pb)
+
   combined.stats.df = do.call(rbind, combined.stats)
 
-  close(pb)
+  combined.stats.df = dplyr::filter(combined.stats.df, !is.na(pvalue))
 
   return(combined.stats.df)
 
@@ -322,7 +324,7 @@ modifierAnalysis = function(stats, counts, counts_summary, condition_,  p_cutoff
       parents = c()
       for (iCombination in 1:ncol(combinations)) {
         combination_mask = paste0(ifelse(str_detect(paste0(combinations[ , iCombination], collapse = "."), nodes), "1", "0"), collapse = "")
-        parent_ = dplyr::filter(stats, modifier_mask == combination_mask, terminal_node == population_$terminal_node)
+        parent_ = dplyr::filter(stats, modifier_mask == combination_mask, terminal_node == population_$terminal_node, condition == condition_)
 
         if (nrow(parent_) == 0) {next}
 

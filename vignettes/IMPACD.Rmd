@@ -200,3 +200,86 @@ gg_box_stage1
 ```
 
 For processing or sharing results outside of `R` it, the data frames can be written to csv files with `write.csv(stats_significant, file = "significant_results.csv")`.
+
+# 5. Stage 2 gating
+In stage 2, IMPACD performs exhaustive permutational analysis of all markers. This resembles what we just did for stage 1, but instead of stopping after the first node, in stage 2 we will keep adding more and more nodes until a specified depth is reached.
+There are a few important considerations to consider on the way:
+  - What should be the maximum depth?
+  This depends on your data and the questions you try to answer. After adding 2 or 3 nodes, the information content that is added by gating deeper, usually drops. A maximum gating depth of three is usually recommended.
+  - How many different nodes can I add?
+  Keep in mind that IMPACD is exploring the full permutational space. That means if you have 10 markers (A, B, C,...), each of which can be positive or negative (A+, A-, B+, B-, C+, ...) and you chain them together in all possible ways, you will quickly end up with hundred of thousands of possible cell populations.
+  
+For this vignette, we will use only the first 10 nodes from the gate defintions. 
+```{r stage 2 gating setup}
+level2_nodes = gate_definitions$Annotation[1:10]
+level2_nodes = c(paste0(level2_nodes, "+"), paste0(level2_nodes, "-"))
+level2_nodes
+```
+Additionally, we need to provide `level2Gating` with the `root_node`, and a maximum gating depth. ```
+An optional argument is `cellcountCutoff`. If the number of total cells for a given population across all samples is smaller than the value provided here, the subpopulation will be excluded from consecutive gating steps, saving computational resources.
+```{r stage 2 gating}
+level2_results = level2Gating(gs, level2_nodes, gate_data, gates,
+                                starting_node = root_node,
+                                max_depth = 3,
+                                cellcountCutoff = 10)
+```
+
+This step might take a while to complete. The above gating approach gives >3000 subpopulation. We can run the same steps as before to generate summary statistics, and (adjusted) p-values.
+
+```{r stage 2 counts}
+# Extract counts from gating set
+counts = gs_pop_get_count_fast(gs, format = "long")
+
+# Add percent parent
+counts$PercentParent = counts$Count/counts$ParentCount*100
+
+# Add meta data
+counts = merge(counts, annotation, by.x = "name", by.y = "fcsName")
+
+# Generate summary statistics
+summary = summarizePopulations(counts)
+```
+
+Before generating `logFC` and `p-values`, we should clean up the summary table. For example, we might not be interested in cell populations that don't have at least 20 cells total in at least one of the study groups. And we are also not interested in any of the populations from subgates from logical gates (OR). This can be accomplished with `cleanPopulations`.
+
+```{r clean stage 2 pops}
+# Number of unique populations before cleanup
+print(length(unique(summary$path)))
+
+summary = cleanPopulations(summary, minCellCount = 20, maxDepth = 3)
+
+# Number of unique populations after cleanup
+print(length(unique(summary$path)))
+```
+After a first clean up  pass, we can now calculate p-values:
+
+```{r stage 2 stats, message=FALSE, results=FALSE}
+stats = generateStatistics(counts, summary, "Control", c("Type 1 Diabetes", "DSRegistry"))
+
+stats$fdr[stats$condition == "DSRegistry"] = p.adjust(stats$pvalue[stats$condition == "DSRegistry"], method = "BH")
+
+stats$fdr[stats$condition == "Type 1 Diabetes"] = p.adjust(stats$pvalue[stats$condition == "Type 1 Diabetes"], method = "BH")
+```
+And add some more information about the gating:
+
+```{r stage 2 gating paths}
+stats = processGatingPaths(stats, max_depth = 3)
+
+colnames(stats)
+```
+As you can see, this time we ended up with two additional columns "modifier_1" and "modifier_2". These will be used in the next step.
+
+To help identify potentially interesting subpopulations `IMPACD` provides the `modifierAnalysis` function. 
+
+>q Describe modifier analysis here
+
+```{r modifier analysis}
+
+report = modifierAnalysis(stats, counts, summary, "DSRegistry", p_cutoff = 0.1)
+
+head(report)
+
+```
+
+This step significantly reduced the number of populations that are being reported. Note that `modifierAnalysis` returns all populations that had a not-adjusted p-value of `< p_cutoff`. You might need to filter the results further down to significant adjusted p-values.
+The cell populations that we end up with after the modifier analysis step can now be used as starting point for any further down stream analysis or written to a csv file with `write.csv(report, file = "modifier_analysis_results.csv")`.
