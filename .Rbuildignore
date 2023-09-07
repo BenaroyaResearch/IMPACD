@@ -1,3 +1,5 @@
 ^IMPACD\.Rproj$
 ^\.Rproj\.user$
 ^rawdata$
+^doc$
+^Meta$

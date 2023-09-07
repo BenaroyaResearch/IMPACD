@@ -20,15 +20,11 @@ level1Gating(gs, leafs, gate_metadata, gates, node)
 from \code{rootLevelGating}}
 }
 \value{
-A list, with first element being the gating set (\code{gs}) and second
-element being a data frame with all gated paths
+A data frame with all gated paths
 }
 \description{
 This function applies the level 1 gating to a gating set after root pathing.
 }
 \examples{
-level1_results = level1Gating(gating_sets_by_batch[[batch_]], level1_nodes, gate_metadata_by_batch[[batch_]], gates_by_batch[[batch_]], root_node) 
-
-gs = level1_results[[1]]
-level1_paths = level1_results[[2]]
+level1_paths = level1Gating(gs, level1_nodes, gate_metadata, gates, root_node)
 }

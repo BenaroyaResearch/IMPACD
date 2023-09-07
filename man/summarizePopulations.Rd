@@ -8,7 +8,7 @@ summarizePopulations(counts)
 }
 \arguments{
 \item{counts}{Data frame that is returned \code{gs_pop_get_count_fast()}, must
-contain the following columns: \code{sample_id}, \code{condition}, \code{Population},
+contain the following columns: \code{name}, \code{condition}, \code{Population},
 \code{Count}, \code{ParentCount}, \code{PercentParent}}
 }
 \value{
@@ -26,7 +26,7 @@ counts = gs_pop_get_count_fast(gs, format = "long")
 counts$PercentParent = counts$Count/counts$ParentCount*100
 
 # Merge with annotations to get condition and sample_id fields
-counts = merge(counts, annotations, by.x = "name", by.y = "fcs_basename")
+counts = merge(counts, annotations, by.x = "name", by.y = "fcsName")
 
 # Generate statistics
 summary = summarizePopulations(counts)

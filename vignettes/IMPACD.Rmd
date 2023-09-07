@@ -1,0 +1,180 @@
+---
+title: "IMPACD"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{IMPACD}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# 1. Loading and processing gates from manual gating
+
+```{r setup, results=FALSE, message=FALSE}
+library(IMPACD)
+# devtools::build_vignettes() 
+# devtools::load_all()
+# devtools::document()
+```
+
+After loading `IMPACD`, start by loading the gate definitions from manual gating for your markers of interest.
+Most times this gating step will be done in flowJo, but you could also gate in R or any other tool.
+`IMPACD` supports most of the common gates, such as rectangular, polygon, threshold, and all kinds of logical gates.
+You might store your gate defintions in a spreadsheet or a `.csv` file and load them, but in order for `IMPACD` to function, the resulting data table has to have four columns `Annotation`, `Name`, `Marker Type` and `Gate Position`:
+```{r load gating data}
+data(gate_definitions)
+head(gate_definitions)
+```
+
+Here are logical gates, exported from flowJo:
+```{r show logical gate}
+tail(gate_definitions)
+```
+
+Important to note is that the coordinates will usually be in the untransformed space. For best results, we need to transfer them into the same space that the gating was initially done in. `IMPACD` can take care of this, but we will have to tell it what the transformations for each marker are. Transformations must be stored in a `transformList` object.
+
+```{r load transformations}
+data(transList_wsp)
+
+# One way to extract transformations from the flowJo workspace file is:
+# ws = open_flowjo_xml("path/to/flowJo_workspace.wsp")
+# gs_flowJo = flowjo_to_gatingset(ws)
+# trans = gh_get_transformations(gs_flowJo[[1]])
+# transList_wsp = transformList(from = names(trans), trans)
+
+```
+
+With this, we can now ask `IMPACD` to process the table with gates. The `processGates` functions returns a list.
+The first entry is a data frame that lists all the gates that were created and contains useful information on the types of gate, the positions in transformed space, and all kinds of subgates that are required for logical gates. The second entry contains the actual gate objects that will later be applied to the flow data.
+```{r process gates}
+output = processGates(gate_definitions, transList_wsp) 
+
+gate_data = output[[1]]
+head(gate_data)
+gates = output[[2]]
+```
+
+# 2. Create gating set
+Next, we need to load the fcs files, transform them into the same space as the initial gating was done in (and the gates have been defined in) and turn them into a gating set. Since `IMPACD` is usually done after some manual gating, the fcs files we are going to work with here, have already been cleaned and compensated. Additionally, the data has already been gate to contain only contain CD4+ cells. For these steps, we are relying on functionality from other packages like `flowCore` and `flowWorkspace`.
+
+```{r load fcs files and transform}
+# Within this vignette, we can directly load the flowSet
+data(fs)
+
+# Or you can manually construct the same flow set using the following
+# fcsDir = system.file("extdata", package="IMPACD")
+# fcsFiles = list.files(fcsDir, full = TRUE, pattern = "*.fcs")
+
+# Turn into a flowSet
+# fs = read.flowSet(fcsFiles)
+
+# Apply transformation
+for (fcs_ in names(fs@frames)) {
+  fs@frames[[fcs_]] = flowCore::transform(fs@frames[[fcs_]], transList_wsp)
+}
+ 
+# Turn flow set into a gating set
+gs = GatingSet(fs)
+```
+
+For later steps, we need to provide some kind of annotation. The annotation should be a data frame with columns `sampleName` and `condition` at a minimum.
+
+```{r load annotation}
+data(annotation)
+annotation
+```
+# 3. Root path gating
+In most cases `IMPACD` gets applied to a specific subset. In this vignette we are only interested in central memory (CM) effector T cells (Teff). Using the gate defintions that we provided, we can filter for the Teff CM cells with `Teff+/CD45RO+/TEM+`. In the language of `IMPACD` this is known as the root path and we can add the Teff CM population to our gating set with
+```{r root path gating}
+# Root path we want to gate for
+root_path = "Teff+/CD45RO+/TEM+"
+
+starting_node = "root" # root is the starting node in the fcs files "all cells"
+
+root_node = rootLevelGating(gs, root_path, gate_data, gates, starting_node)
+root_node
+```
+The root path gets applied to `gs` (which is a pointer and therefore is not returned) and we can now continue with `IMPACD` on only the Teff CM cells.
+
+# 4. Stage 1 gating
+After we have decided on a specific cell subtype (Teff CM) we can do what `IMPACD` refers to as stage 1 gating.
+q> give a description of level 1 gating here.
+
+For this example we are going to use all of the 1D positive gates from the gating definitions, except for `CD4+`.
+```{r stage 1 gating}
+# Pick gates
+level1_nodes = gate_definitions$Annotation[1:22]
+level1_nodes = level1_nodes[level1_nodes != "CD4"]
+level1_nodes = paste0(level1_nodes, "+")
+level1_nodes
+
+# Apply stage 1 gating
+level1_paths = level1Gating(gs, level1_nodes, gate_data, gates, root_node) 
+```
+The function `level1Gating` returns a dataframe that contains information about each level 1 node that was gated for, such as the node name, the parent population and others.
+```{r explore level1_paths}
+level1_paths
+```
+This can be used to extract cell populations from the gating set using functionality from `flowWorkspace`:
+```{r get cell counts from stage 1}
+counts = gs_pop_get_count_fast(gs, format = "long")
+
+# Add percent parent
+counts$PercentParent = counts$Count/counts$ParentCount*100
+
+# Filter down to populations from stage 1 gating
+counts = dplyr::filter(counts, Population %in% level1_paths$gs_path)
+head(counts)
+
+```
+
+The `counts` object is a data frame that contains population counts for each node for each sample.
+
+In the next step, we can ask `IMPACD` to calculate log2 fold changes and p values for differences between the "Control" vs the "Type 1 Diabetes" and "DSRegistry" groups
+
+```{r analyse stage 1 results, message=FALSE}
+# Merge the annotation data into the counts frame
+counts = merge(counts, annotation, by.x = "name", by.y = "fcsName")
+
+summary = summarizePopulations(counts)
+stats = generateStatistics(counts, summary, "Control", c("Type 1 Diabetes", "DSRegistry"))
+```
+In order to exclude false positives, the results should be adjusted:
+
+```{r fdr adjust stage 1 results}
+stats$fdr[stats$condition == "DSRegistry"] = p.adjust(stats$pvalue[stats$condition == "DSRegistry"], method = "BH")
+
+stats$fdr[stats$condition == "Type 1 Diabetes"] = p.adjust(stats$pvalue[stats$condition == "Type 1 Diabetes"], method = "BH")
+
+head(stats)
+```
+
+Unfortunately, none of the results are significant with FDR adjusted p-values < 0.05. The reason for that is that we only used a very small data set. So, for the sake of demonstration, we will consider everything with an adjusted p-value of < 0.5 as significant.
+
+`IMPACD` comes with a function that can add columns that break out information about gating. This additional information can be very useful in downstream analysis, and is provided by `processGatingPaths`. The parameter `max_depth` tells the function how deep we gated after the root path.
+
+```{r}
+stats = processGatingPaths(stats, max_depth = 1)
+
+head(stats)
+```
+
+For visualization, we can make a volcano-like plot for each population:
+```{r volcano plots stage 1}
+gg_vps = stats %>%
+  ggplot(aes(x = log2Fold, y = -log10(fdr))) + 
+  geom_point(alpha=0.7, size=2.5, shape = 19) +
+  facet_grid(. ~ condition, scales = "fixed") + 
+  theme_bw()
+  
+gg_vps
+
+
+
+```

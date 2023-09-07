@@ -4,13 +4,12 @@
 \alias{rootLevelGating}
 \title{Applies root level gating}
 \usage{
-rootLevelGating(gs, gating_strategy, gate_metadata, gates, starting_node = "")
+rootLevelGating(gs, root_path, gate_metadata, gates, starting_node = "")
 }
 \arguments{
 \item{gs}{gating set}
 
-\item{gating_strategy}{a data frame that contains columns with gate \code{name},
-\code{type} (root or leaf) and \code{root_oder}, see examples}
+\item{root_path}{a string or array with the root path, e.g. "Teff+/CD45RO+/TEM+" or c("Teff+", "CD45RO+", "TEM+")}
 
 \item{gate_metadata}{data frame with information on gates, comes from
 \code{processGates()}}
@@ -20,27 +19,18 @@ rootLevelGating(gs, gating_strategy, gate_metadata, gates, starting_node = "")
 \item{starting_node}{optional, the starting node for gating, usually root or "", \code{default = ""}}
 }
 \value{
-A list, with first element being the gating set (\code{gs}) and second
-element being the root node path
+A string that is the root node path
 }
 \description{
 This function applies the root level gating to a gating set.
 }
 \examples{
-# Generate the gating strategy data frame
+# Rootpath
 root_path = c("Teff+", "CD45RO+", "TEM+")
-leafs = c("CD49b+", "TIGIT+")
-
-gating_strategy = data.frame(name = c(root_path, leafs))
-gating_strategy = mutate(gating_strategy, type = case_when(name \%in\% root_path ~ 'root',
-gating_strategy$root_order = ""
-gating_strategy$root_order[1:length(root_path)] = 1:length(root_path)
 
 # Apply root level gating
-gating_results = rootLevelGating(gs, gating_strategy, gate_metadata, gates)
+root_node = rootLevelGating(gs, root_path, gate_metadata, gates)
 
-gs = gating_results[[1]]
-root_node = gating_results[[2]]
 print(root_node)
 [1] "root/Teff+/CD45RO+/TEM+"
 }
