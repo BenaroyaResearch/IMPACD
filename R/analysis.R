@@ -111,6 +111,12 @@ cleanPopulations = function(summary, minCellCount = 20, maxDepth = 3) {
 #' @export
 processGatingPaths = function(summary, max_depth = 1) {
 
+  columns = colnames(summary)
+
+  if (!"path" %in% columns) {
+    summary$path = summary$Population
+  }
+
   # determine gating depth for each population
   summary$depth = str_count(summary$path, "/")
 

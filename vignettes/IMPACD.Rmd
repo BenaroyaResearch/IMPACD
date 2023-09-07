@@ -138,7 +138,7 @@ The `counts` object is a data frame that contains population counts for each nod
 
 In the next step, we can ask `IMPACD` to calculate log2 fold changes and p values for differences between the "Control" vs the "Type 1 Diabetes" and "DSRegistry" groups
 
-```{r analyse stage 1 results, message=FALSE}
+```{r analyse stage 1 results, message=FALSE, results=FALSE}
 # Merge the annotation data into the counts frame
 counts = merge(counts, annotation, by.x = "name", by.y = "fcsName")
 
@@ -166,15 +166,37 @@ head(stats)
 ```
 
 For visualization, we can make a volcano-like plot for each population:
-```{r volcano plots stage 1}
-gg_vps = stats %>%
-  ggplot(aes(x = log2Fold, y = -log10(fdr))) + 
+```{r volcano plots stage 1, fig.width=7, fig.height=5, fig.align = 'center'}
+gg_vp_stage1 = stats %>%
+  ggplot(aes(x = log2Fold, y = -log10(fdr), color = terminal_node)) + 
   geom_point(alpha=0.7, size=2.5, shape = 19) +
   facet_grid(. ~ condition, scales = "fixed") + 
   theme_bw()
   
-gg_vps
-
-
+gg_vp_stage1
 
 ```
+
+We can also visualize the cell counts for the populations with adjusted p-values < 0.5
+
+```{r stage 1 boxplots, fig.width=7, fig.height=5, fig.align = 'center'}
+# pick only populations with significant fdrs in at least one of the experimental groups
+stats_significant = dplyr::filter(stats, fdr < 0.5) 
+
+# process the gating paths
+counts = processGatingPaths(counts, max_depth = 1)
+
+gg_box_stage1 = counts %>% 
+    dplyr::filter(Population %in% stats_significant$path) %>%
+    ggplot(aes(x = condition, y = PercentParent, fill = condition) ) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter(aes(color = condition), position = position_jitter(0.15)) +
+    theme_bw() +
+    theme(axis.text.x = element_blank()) + 
+    ylab("Percent of parent population") + 
+    facet_wrap(.~ terminal_node, scales = "free", ncol = 3)
+
+gg_box_stage1
+```
+
+For processing or sharing results outside of `R` it, the data frames can be written to csv files with `write.csv(stats_significant, file = "significant_results.csv")`.
