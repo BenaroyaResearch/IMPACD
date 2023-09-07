@@ -31,7 +31,7 @@ from \code{rootLevelGating}}
 \item{max_depth}{maximum depth for gating, \code{default = 3}. Warning, increasing
 this might take very, very long.}
 
-\item{level1_nodes}{can be provided to restrict the space for the first level
+\item{level1_nodes}{optional, can be provided to restrict the space for the first level
 gating, else all \code{leafs} will be gated, \code{default = NULL}}
 
 \item{cellcountCutoff}{minimum number of cells for a population to continue going down the tree}

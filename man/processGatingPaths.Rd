@@ -4,7 +4,7 @@
 \alias{processGatingPaths}
 \title{Process the gating paths}
 \usage{
-processGatingPaths(summary, max_depth = 3)
+processGatingPaths(summary, max_depth = 1)
 }
 \arguments{
 \item{summary}{Data frame that is returned by \code{summarizePopulations()}, or any

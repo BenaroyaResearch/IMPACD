@@ -18,9 +18,6 @@ knitr::opts_chunk$set(
 
 ```{r setup, results=FALSE, message=FALSE}
 library(IMPACD)
-# devtools::build_vignettes() 
-# devtools::load_all()
-# devtools::document()
 ```
 
 After loading `IMPACD`, start by loading the gate definitions from manual gating for your markers of interest.
