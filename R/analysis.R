@@ -207,7 +207,7 @@ generateStatistics = function(counts, summary, control, studyGroups) {
       stats_ = data.frame(path = path_,
                           condition = group_,
                           log2Fold = log2FC,
-                          pvalue = test$p.value
+                          pvalue = test$p.value,
                           group_1_median_pct_parent = median(x),
                           group_2_median_pct_parent = median(y),
                           group_1_sd_pct_parent = sd(x),
