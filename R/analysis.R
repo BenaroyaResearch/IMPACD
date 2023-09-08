@@ -248,8 +248,6 @@ generateStatistics = function(counts, summary, control, studyGroups) {
 #' @param stats the stats obtained from `generateStatistics()` and must have
 #' been processed with `processGatingPaths()`
 #' @param counts data frame that is returned `gs_pop_get_count_fast()`
-#' @param counts_summary data frame that is returned by `summarizePopulations()`, must
-#' contain `condition` and `path`
 #' @param condition_ string that with the name of the experimental group
 #' @param p_cutoff p-value cutoff for reporting significance
 #' @return A data frame that contains all populations that are of significant
@@ -263,7 +261,7 @@ generateStatistics = function(counts, summary, control, studyGroups) {
 #`
 #` interestingPopulations = modifierAnalysis(stats, counts, summary, "T1D", p_cutoff = 0.05)
 #' @export
-modifierAnalysis = function(stats, counts, counts_summary, condition_,  p_cutoff = 0.05) {
+modifierAnalysis = function(stats, counts, condition_,  p_cutoff = 0.05) {
   max_depth = max(stats$depth)
 
   report = c()
@@ -326,7 +324,7 @@ modifierAnalysis = function(stats, counts, counts_summary, condition_,  p_cutoff
       }
 
       background_corrected_x = dplyr::filter(counts, condition == condition_, Population == population_$path )$PercentParent -
-        dplyr::filter(counts_summary, condition == "Control", path == population_$path)$median
+        dplyr::filter(stats, condition == "Control", path == population_$path)$group_1_median_pct_parent
 
       case_counter = matrix(0,
                             nrow = 2, ncol = 2,
@@ -343,7 +341,7 @@ modifierAnalysis = function(stats, counts, counts_summary, condition_,  p_cutoff
         parents = rbind(parents, parent_)
 
         background_corrected_y = dplyr::filter(counts, condition == condition_, Population == parent_$path )$PercentParent -
-          dplyr::filter(counts_summary, condition == "Control", path == parent_$path)$median
+          dplyr::filter(stats, condition == "Control", path == parent_$path)$group_2_median_pct_parent
 
         p_value_node_vs_parent = wilcox.test(background_corrected_x, background_corrected_y, exact = FALSE)$p.value
 
