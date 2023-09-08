@@ -195,8 +195,10 @@ generateStatistics = function(counts, summary, control, studyGroups) {
     stats = c()
 
     x = dplyr::filter(counts, condition == control, Population == path_)$PercentParent
+    x_counts = dplyr::filter(counts, condition == control, Population == path_)$Count
     for (group_ in studyGroups ) {
       y = dplyr::filter(counts, condition == group_, Population == path_)$PercentParent
+      y_counts = dplyr::filter(counts, condition == control, Population == path_)$Count
 
       log2FC = log2(median(y)) - log2(median(x))
 
@@ -205,7 +207,17 @@ generateStatistics = function(counts, summary, control, studyGroups) {
       stats_ = data.frame(path = path_,
                           condition = group_,
                           log2Fold = log2FC,
-                          pvalue = test$p.value)
+                          pvalue = test$p.value
+                          group_1_median_pct_parent = median(x),
+                          group_2_median_pct_parent = median(y),
+                          group_1_sd_pct_parent = sd(x),
+                          group_2_sd_pct_parent = sd(y),
+                          group_1_median_count = median(x_counts),
+                          group_2_median_count = median(y_counts),
+                          group_1_sd_count = median(x_counts),
+                          group_2_sd_count = median(y_counts),
+                          group_1_total_cells = sum(x_counts),
+                          group_2_total_cells = sum(y_counts))
 
       stats = rbind(stats, stats_)
     }
