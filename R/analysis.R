@@ -250,151 +250,162 @@ generateStatistics = function(counts, summary, control, studyGroups) {
 #' @param stats the stats obtained from `generateStatistics()` and must have
 #' been processed with `processGatingPaths()`
 #' @param counts data frame that is returned `gs_pop_get_count_fast()`
-#' @param condition_ string that with the name of the experimental group
 #' @param p_cutoff p-value cutoff for reporting significance
 #' @return A data frame that contains all populations that are of significant
 #' information content
 #' @examples
-#' # Generate stats from the summary and counts objects
-#` stats = generateStatistics(counts, summary, "Control", "T1D")
-#`
-#` interestingPopulations = modifierAnalysis(stats, counts, "T1D", p_cutoff = 0.05)
+#' interestingPopulations = modifierAnalysis(stats, counts, p_cutoff = 0.05)
 #' @export
-modifierAnalysis = function(stats, counts, condition_,  p_cutoff = 0.05) {
-  max_depth = max(stats$depth)
+modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
 
-  report = c()
+  group_comparisons = distinct(dplyr::select(fullstats, group_1_name, group_2_name))
+
+  full_report = c()
   removed_from_report = c()
 
-  stats = dplyr::filter(stats, condition == condition_)
+  for (icomparison in 1:nrow(group_comparisons)) {
+    control_group = group_comparisons$group_1_name[icomparison]
+    study_group = group_comparisons$group_2_name[icomparison]
 
-  # Find all the nodes that we have
-  # First remove + and -, find uniques, and then readd +/- in regexp compatible form
-  nodes = unique(str_remove(dplyr::filter(stats, depth > 0)$terminal_node, "\\+|\\-"))
-  nodes = c(paste0(nodes, "\\+"), paste0(nodes, "\\-"))
+    message(paste0("Starting modifier analysis of ", control_group, " vs ", study_group))
 
-  # Extract rood node, and turn it into a regexp compatible version
-  root_node = stats$root_node[1]
-  root_node = str_replace_all(root_node, "\\+", "\\\\+")
-  root_node = str_replace_all(root_node, "\\-", "\\\\-")
-  root_node = paste0("/", root_node)
+    stats = dplyr::filter(fullstats, condition == study_group)
+    report = c()
 
-  # Add a column modifier_path by removing the root node and also removing the terminal node
-  stats$modifier_path = sub(root_node, "", stats$path)
-  stats$modifier_path = sub("/[^/]*$", "", stats$modifier_path)
+    max_depth = max(stats$depth)
 
-  # Build a binary mask for all modifier paths
-  modifier_masks = lapply(stats$modifier_path, function(x) { ifelse(str_detect(x, nodes), "1", "0") })
-  for (i in 1:length(modifier_masks)) {
-    stats$modifier_mask[i] = unlist(paste0(modifier_masks[[i]], collapse = ""))
-  }
+    # Find all the nodes that we have
+    # First remove + and -, find uniques, and then readd +/- in regexp compatible form
+    nodes = unique(str_remove(dplyr::filter(stats, depth > 0)$terminal_node, "\\+|\\-"))
+    nodes = c(paste0(nodes, "\\+"), paste0(nodes, "\\-"))
 
-  subpopulations = list()
-  for (depth_ in max_depth:1) {
-    subpopulations[[depth_]] = dplyr::filter(stats, depth == depth_, pvalue < p_cutoff)
-  }
+    # Extract rood node, and turn it into a regexp compatible version
+    root_node = stats$root_node[1]
+    root_node = str_replace_all(root_node, "\\+", "\\\\+")
+    root_node = str_replace_all(root_node, "\\-", "\\\\-")
+    root_node = paste0("/", root_node)
 
-  for (depth_ in max_depth:1) {
-    nPops = nrow(subpopulations[[depth_]])
+    # Add a column modifier_path by removing the root node and also removing the terminal node
+    stats$modifier_path = sub(root_node, "", stats$path)
+    stats$modifier_path = sub("/[^/]*$", "", stats$modifier_path)
 
-    message(paste0("Modifier analysis of ", nPops, " subpopulations with p-value > ", p_cutoff, " at gating depth ", depth_, "."))
-    iPop = 0
-    pb = txtProgressBar(min = iPop, max = nPops, style = 3)
-
-    for (iPop in 1:nPops) {
-      setTxtProgressBar(pb, iPop)
-
-      population_ = subpopulations[[depth_]][iPop, ]
-
-      # Turn all the modifiers into a vector
-      modifier_vec = unlist(strsplit(str_remove(population_$modifier_path, '^/'), "/"))
-
-      if (depth_ == 1) {
-        report = rbind(report, population_)
-        next
-      }
-
-      nmodifier_ = depth_-1
-
-      # Calculate the combinations of the modifiers
-      if (nmodifier_ == 1) {
-        combinations = matrix("", ncol = 1)
-      } else {
-        combinations = combn(modifier_vec, m = nmodifier_-1)
-      }
-
-      background_corrected_x = dplyr::filter(counts, condition == condition_, Population == population_$path )$PercentParent -
-        dplyr::filter(stats, condition == condition_, path == population_$path)$group_1_median_pct_parent
-
-      case_counter = matrix(0,
-                            nrow = 2, ncol = 2,
-                            dimnames = list(c("non_significant_FDR_in_parent", "significant_FDR_in_parent"),
-                                            c("no_significance_between_node_and_parent", "significance_between_node_and_parent")
-                            ))
-      parents = c()
-      for (iCombination in 1:ncol(combinations)) {
-        combination_mask = paste0(ifelse(str_detect(paste0(combinations[ , iCombination], collapse = "."), nodes), "1", "0"), collapse = "")
-        parent_ = dplyr::filter(stats, modifier_mask == combination_mask, terminal_node == population_$terminal_node, condition == condition_)
-
-        if (nrow(parent_) == 0) {next}
-
-        parents = rbind(parents, parent_)
-
-        background_corrected_y = dplyr::filter(counts, condition == condition_, Population == parent_$path )$PercentParent -
-          dplyr::filter(stats, condition == condition_, path == parent_$path)$group_1_median_pct_parent
-
-        p_value_node_vs_parent = wilcox.test(background_corrected_x, background_corrected_y, exact = FALSE)$p.value
-
-        # if R/A/B/C is investigated
-        # if there is a significant difference between R/A/C and R/A/B/C
-        if (p_value_node_vs_parent < p_cutoff) {
-          # R/A/C vs R/A/B/C IS significant
-          col = "significance_between_node_and_parent"
-        } else {
-          col = "no_significance_between_node_and_parent"
-        }
-
-        if (parent_$pvalue < p_cutoff) {
-          # If R/A/C by itself is significant
-          row = "significant_FDR_in_parent"
-        } else {
-          row = "non_significant_FDR_in_parent"
-        }
-
-        case_counter[row, col] =+ 1
-
-      }
-
-      if (sum(case_counter["significant_FDR_in_parent", ]) == 1 &
-          case_counter["significant_FDR_in_parent", "no_significance_between_node_and_parent"] == 1 ) {
-        # This is the case where one parent has a significant FDR, and the select subpopulation compared to that parent has no significant difference
-        # In this case, we can assume that the observed difference in the node is driven by the parent.
-        # We need to make sure that a) there is ONLY ONE parent that is significant and b) that this parent shows no difference in the distribution of values between itself and the subpopulation
-        # We only want to report the parent, and remove the node from the report (in case it has been added previously by a higher gating depth)
-
-        # report = dplyr::filter(report, path != population_$path)
-        # The parent is getting reported outside the if condition
-
-        # For debugging reasons, I am also keeping track of subpopulations that get removed
-        removed_from_report = rbind(removed_from_report, population_)
-      } else {
-        report = rbind(report, population_)
-      }
-
-      # report all parents that have a significant FDR (if there are parents at all)
-      if (!is.null(parents)) {
-        report = rbind(report, dplyr::filter(parents, pvalue < p_cutoff) )
-      }
-
+    # Build a binary mask for all modifier paths
+    modifier_masks = lapply(stats$modifier_path, function(x) { ifelse(str_detect(x, nodes), "1", "0") })
+    for (i in 1:length(modifier_masks)) {
+      stats$modifier_mask[i] = unlist(paste0(modifier_masks[[i]], collapse = ""))
     }
-    close(pb)
+
+    subpopulations = list()
+    for (depth_ in max_depth:1) {
+      subpopulations[[depth_]] = dplyr::filter(stats, depth == depth_, pvalue < p_cutoff)
+    }
+
+    for (depth_ in max_depth:1) {
+      nPops = nrow(subpopulations[[depth_]])
+
+      message(paste0("Modifier analysis of ", nPops, " subpopulations with p-value < ", p_cutoff, " at gating depth ", depth_, "."))
+      iPop = 0
+
+      if (nPops == 0) {next}
+
+      pb = txtProgressBar(min = iPop, max = nPops, style = 3)
+
+      for (iPop in 1:nPops) {
+        setTxtProgressBar(pb, iPop)
+
+        population_ = subpopulations[[depth_]][iPop, ]
+
+        # Turn all the modifiers into a vector
+        modifier_vec = unlist(strsplit(str_remove(population_$modifier_path, '^/'), "/"))
+
+        if (depth_ == 1) {
+          report = rbind(report, population_)
+          next
+        }
+
+        nmodifier_ = depth_-1
+
+        # Calculate the combinations of the modifiers
+        if (nmodifier_ == 1) {
+          combinations = matrix("", ncol = 1)
+        } else {
+          combinations = combn(modifier_vec, m = nmodifier_-1)
+        }
+
+        background_corrected_x = dplyr::filter(counts, condition == study_group, Population == population_$path, !is.na(PercentParent))$PercentParent -
+          median(dplyr::filter(counts, condition == control_group, Population == population_$path, !is.na(PercentParent) )$PercentParent)
+
+        case_counter = matrix(0,
+                              nrow = 2, ncol = 2,
+                              dimnames = list(c("non_significant_FDR_in_parent", "significant_FDR_in_parent"),
+                                              c("no_significance_between_node_and_parent", "significance_between_node_and_parent")
+                              ))
+        parents = c()
+        for (iCombination in 1:ncol(combinations)) {
+          combination_mask = paste0(ifelse(str_detect(paste0(combinations[ , iCombination], collapse = "."), nodes), "1", "0"), collapse = "")
+          parent_ = dplyr::filter(stats, modifier_mask == combination_mask, terminal_node == population_$terminal_node, condition == study_group)
+
+          if (nrow(parent_) == 0) {next}
+
+          parents = rbind(parents, parent_)
+
+          background_corrected_y = dplyr::filter(counts, condition == study_group, Population == parent_$path, !is.na(PercentParent))$PercentParent -
+            median(dplyr::filter(counts, condition == control_group, Population == parent_$path, !is.na(PercentParent) )$PercentParent)
+
+          p_value_node_vs_parent = wilcox.test(background_corrected_x, background_corrected_y, exact = FALSE)$p.value
+
+          # if R/A/B/C is investigated
+          # if there is a significant difference between R/A/C and R/A/B/C
+          if (p_value_node_vs_parent < p_cutoff) {
+            # R/A/C vs R/A/B/C IS significant
+            col = "significance_between_node_and_parent"
+          } else {
+            col = "no_significance_between_node_and_parent"
+          }
+
+          if (parent_$pvalue < p_cutoff) {
+            # If R/A/C by itself is significant
+            row = "significant_FDR_in_parent"
+          } else {
+            row = "non_significant_FDR_in_parent"
+          }
+
+          case_counter[row, col] =+ 1
+
+        }
+
+        if (sum(case_counter["significant_FDR_in_parent", ]) == 1 &
+            case_counter["significant_FDR_in_parent", "no_significance_between_node_and_parent"] == 1 ) {
+          # This is the case where one parent has a significant FDR, and the select subpopulation compared to that parent has no significant difference
+          # In this case, we can assume that the observed difference in the node is driven by the parent.
+          # We need to make sure that a) there is ONLY ONE parent that is significant and b) that this parent shows no difference in the distribution of values between itself and the subpopulation
+          # We only want to report the parent, and remove the node from the report (in case it has been added previously by a higher gating depth)
+
+          # report = dplyr::filter(report, path != population_$path)
+          # The parent is getting reported outside the if condition
+
+          # For debugging reasons, I am also keeping track of subpopulations that get removed
+          removed_from_report = rbind(removed_from_report, population_)
+        } else {
+          report = rbind(report, population_)
+        }
+
+        # report all parents that have a significant FDR (if there are parents at all)
+        if (!is.null(parents)) {
+          report = rbind(report, dplyr::filter(parents, pvalue < p_cutoff) )
+        }
+
+      }
+      close(pb)
+    }
+
+    report = dplyr::select(report, -modifier_mask, -modifier_path)
+    report = distinct(report)
+
+    full_report = rbind(full_report, report)
+
+    removed_from_report = distinct(removed_from_report)
+
   }
-
-  report = dplyr::select(report, -modifier_mask, -modifier_path)
-  report = distinct(report)
-
-  removed_from_report = distinct(removed_from_report)
-
-
-  return(report)
+  return(full_report)
 }

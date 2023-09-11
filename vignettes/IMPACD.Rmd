@@ -229,6 +229,7 @@ counts = gs_pop_get_count_fast(gs, format = "long")
 
 # Add percent parent
 counts$PercentParent = counts$Count/counts$ParentCount*100
+counts$PercentParent[is.na(counts$PercentParent)] = NA # replace NaNs with NA that could come divisions by 0
 
 # Add meta data
 counts = merge(counts, annotation, by.x = "name", by.y = "fcsName")
@@ -271,7 +272,7 @@ To help identify potentially interesting subpopulations `IMPACD` provides the `m
 >q Describe modifier analysis here
 
 ```{r modifier analysis, message=FALSE, results=FALSE}
-report = modifierAnalysis(stats, counts, summary, "DSRegistry", p_cutoff = 0.1)
+report = modifierAnalysis(stats, counts, p_cutoff = 0.1)
 ```
 
 ```{r modifiere analysis results}
