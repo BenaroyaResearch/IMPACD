@@ -4,20 +4,15 @@
 \alias{modifierAnalysis}
 \title{Modifier analysis}
 \usage{
-modifierAnalysis(stats, counts, counts_summary, condition_, p_cutoff = 0.05)
+modifierAnalysis(fullstats, counts, p_cutoff = 0.05)
 }
 \arguments{
-\item{stats}{the stats obtained from \code{generateStatistics()} and must have
-been processed with \code{processGatingPaths()}}
-
 \item{counts}{data frame that is returned \code{gs_pop_get_count_fast()}}
 
-\item{counts_summary}{data frame that is returned by \code{summarizePopulations()}, must
-contain \code{condition} and \code{path}}
-
-\item{condition_}{string that with the name of the experimental group}
-
 \item{p_cutoff}{p-value cutoff for reporting significance}
+
+\item{stats}{the stats obtained from \code{generateStatistics()} and must have
+been processed with \code{processGatingPaths()}}
 }
 \value{
 A data frame that contains all populations that are of significant
@@ -33,7 +28,5 @@ control group and the experimental group. This function is going to test
 difference between them and /R/A+/B+/C+.
 }
 \examples{
-# Obtain all the data structures needed
-summary = summarizePopulations(counts)
-summary = cleanPopulations(summary)
+interestingPopulations = modifierAnalysis(stats, counts, p_cutoff = 0.05)
 }

@@ -254,7 +254,7 @@ generateStatistics = function(counts, summary, control, studyGroups) {
 #' @return A data frame that contains all populations that are of significant
 #' information content
 #' @examples
-#` interestingPopulations = modifierAnalysis(stats, counts, p_cutoff = 0.05)
+#' interestingPopulations = modifierAnalysis(stats, counts, p_cutoff = 0.05)
 #' @export
 modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
 
