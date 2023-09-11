@@ -332,8 +332,8 @@ modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
           combinations = combn(modifier_vec, m = nmodifier_-1)
         }
 
-        background_corrected_x = dplyr::filter(counts, condition == study_group, Population == population_$path )$PercentParent -
-          dplyr::filter(stats, condition == study_group, path == population_$path)$group_1_median_pct_parent
+        background_corrected_x = dplyr::filter(counts, condition == study_group, Population == population_$path, !is.na(PercentParent))$PercentParent -
+          median(dplyr::filter(counts, condition == control_group, Population == population_$path, !is.na(PercentParent) )$PercentParent)
 
         case_counter = matrix(0,
                               nrow = 2, ncol = 2,
@@ -349,8 +349,8 @@ modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
 
           parents = rbind(parents, parent_)
 
-          background_corrected_y = dplyr::filter(counts, condition == study_group, Population == parent_$path )$PercentParent -
-            dplyr::filter(stats, condition == study_group, path == parent_$path)$group_1_median_pct_parent
+          background_corrected_y = dplyr::filter(counts, condition == study_group, Population == parent_$path, !is.na(PercentParent))$PercentParent -
+            median(dplyr::filter(counts, condition == control_group, Population == parent_$path, !is.na(PercentParent) )$PercentParent)
 
           p_value_node_vs_parent = wilcox.test(background_corrected_x, background_corrected_y, exact = FALSE)$p.value
 
