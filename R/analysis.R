@@ -253,13 +253,10 @@ generateStatistics = function(counts, summary, control, studyGroups) {
 #' @return A data frame that contains all populations that are of significant
 #' information content
 #' @examples
-#' # Obtain all the data structures needed
-#' summary = summarizePopulations(counts)
-#' summary = cleanPopulations(summary)
-#` stats = generateStatistics(stage2_counts, summary, "Control", "T1D")
-#` stats = processGatingPaths(stats)
+#' # Generate stats from the summary and counts objects
+#` stats = generateStatistics(counts, summary, "Control", "T1D")
 #`
-#` interestingPopulations = modifierAnalysis(stats, counts, summary, "T1D", p_cutoff = 0.05)
+#` interestingPopulations = modifierAnalysis(stats, counts, "T1D", p_cutoff = 0.05)
 #' @export
 modifierAnalysis = function(stats, counts, condition_,  p_cutoff = 0.05) {
   max_depth = max(stats$depth)
@@ -267,6 +264,7 @@ modifierAnalysis = function(stats, counts, condition_,  p_cutoff = 0.05) {
   report = c()
   removed_from_report = c()
 
+  stats = dplyr::filter(stats, condition == condition_)
 
   # Find all the nodes that we have
   # First remove + and -, find uniques, and then readd +/- in regexp compatible form
@@ -324,7 +322,7 @@ modifierAnalysis = function(stats, counts, condition_,  p_cutoff = 0.05) {
       }
 
       background_corrected_x = dplyr::filter(counts, condition == condition_, Population == population_$path )$PercentParent -
-        dplyr::filter(stats, condition == "Control", path == population_$path)$group_1_median_pct_parent
+        dplyr::filter(stats, condition == condition_, path == population_$path)$group_1_median_pct_parent
 
       case_counter = matrix(0,
                             nrow = 2, ncol = 2,
@@ -341,7 +339,7 @@ modifierAnalysis = function(stats, counts, condition_,  p_cutoff = 0.05) {
         parents = rbind(parents, parent_)
 
         background_corrected_y = dplyr::filter(counts, condition == condition_, Population == parent_$path )$PercentParent -
-          dplyr::filter(stats, condition == "Control", path == parent_$path)$group_2_median_pct_parent
+          dplyr::filter(stats, condition == condition_, path == parent_$path)$group_1_median_pct_parent
 
         p_value_node_vs_parent = wilcox.test(background_corrected_x, background_corrected_y, exact = FALSE)$p.value
 
