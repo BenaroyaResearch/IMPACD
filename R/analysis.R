@@ -198,7 +198,7 @@ generateStatistics = function(counts, summary, control, studyGroups) {
     x_counts = dplyr::filter(counts, condition == control, Population == path_)$Count
     for (group_ in studyGroups ) {
       y = dplyr::filter(counts, condition == group_, Population == path_)$PercentParent
-      y_counts = dplyr::filter(counts, condition == control, Population == path_)$Count
+      y_counts = dplyr::filter(counts, condition == group_, Population == path_)$Count
 
       log2FC = log2(median(y)) - log2(median(x))
 
