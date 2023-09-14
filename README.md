@@ -9,8 +9,6 @@ if (!require("BiocManager", quietly = TRUE))
 BiocManager::install(c("flowWorkspace", "CytoML", "flowCore"))
 
 # Install github dependencies
-devtools::install_github("RGLab/cytoinstaller")
-cytoinstaller::install_cyto(bioc_ver = "devel")
 devtools::install_github("DillonHammill/CytoExploreR")
 ```
 ## Access token
