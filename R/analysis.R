@@ -202,12 +202,27 @@ generateStatistics = function(counts, summary, control, studyGroups) {
 
       log2FC = log2(median(y)) - log2(median(x))
 
+      tryCatch(
+        expr = {
+          test = wilcox.test(x, y, exact = FALSE)
+          p.value = test$p.value
+        },
+        error = function(e){
+          # message('Caught an error!')
+          p.value = NA
+        },
+        finally = {
+          # message('Done!')
+        }
+      )
+
+
       test = wilcox.test(x, y, exact = FALSE)
 
       stats_ = data.frame(path = path_,
                           condition = group_,
                           log2Fold = log2FC,
-                          pvalue = test$p.value,
+                          pvalue = p.value,
                           group_1_name = control,
                           group_2_name = group_,
                           group_1_median_pct_parent = median(x),
