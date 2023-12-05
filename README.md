@@ -9,8 +9,6 @@ if (!require("BiocManager", quietly = TRUE))
 BiocManager::install(c("flowWorkspace", "CytoML", "flowCore"))
 
 # Install github dependencies
-devtools::install_github("RGLab/cytoinstaller")
-cytoinstaller::install_cyto(bioc_ver = "devel")
 devtools::install_github("DillonHammill/CytoExploreR")
 ```
 ## Access token
@@ -29,9 +27,14 @@ Sys.setenv(
 ```
 
 After this, you can install **IMPACD** from github using the following command:
-``` r
+```r
 devtools::install_github("BenaroyaResearch/IMPACD")
 ```
+or use
+```r
+devtools::install_github("BenaroyaResearch/IMPACD", build_vignettes = TRUE)
+```
+to build it with the vignette.
 
 ## Usage
 **IMPACD** ships with a vignette that walks through the entire analysis pipeline. You can access it by running the following command:
