@@ -128,7 +128,7 @@ processGatingPaths = function(summary, max_depth = 1) {
   pathing = str_split(str_remove(summary$path, '^/'), "/", simplify = TRUE)
 
   # determine the root path
-  root_path = paste(pathing[1, 1:root_path_length], collapse = "/")
+  root_path = paste(pathing[nrow(summary), 1:root_path_length], collapse = "/")
   summary$root_node = root_path
 
   # determine terminal node
@@ -137,7 +137,7 @@ processGatingPaths = function(summary, max_depth = 1) {
   # determine gating depth after root path
   summary$depth = summary$depth - root_path_length
 
-  # No need to extraxt modifiers if max_depth is 1
+  # No need to extract modifiers if max_depth is 1
   if (max_depth == 1) {return(summary)}
 
   # determine what the maximum number of modifiers must have been
