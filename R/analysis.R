@@ -202,11 +202,11 @@ generateStatistics = function(counts, summary, control, studyGroups) {
 
       log2FC = log2(median(y)) - log2(median(x))
 
-      if (any(!is.na(y)) || any(!is.na(x))) {
-        p.value = NA
-      } else {
+      if (any(!is.na(y)) && any(!is.na(x))) {
         test = wilcox.test(x, y, exact = FALSE)
         p.value = test$p.value
+      } else {
+        p.value = NA
       }
 
       stats_ = data.frame(path = path_,
