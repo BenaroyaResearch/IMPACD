@@ -192,21 +192,29 @@ generateStatistics = function(counts, summary, control, studyGroups) {
     setTxtProgressBar(pb, i)
 
     path_ = paths[i]
+    # print(path_)
     stats = c()
 
+    # get the pct parents for that population
     x = dplyr::filter(counts, condition == control, Population == path_)$PercentParent
+    x = x[!is.na(x)] # but filter out the entries that are NA - this is the case when the parent already had 0 cells for that sample
+
     x_counts = dplyr::filter(counts, condition == control, Population == path_)$Count
+
     for (group_ in studyGroups ) {
       y = dplyr::filter(counts, condition == group_, Population == path_)$PercentParent
+      y = y[!is.na(y)]
+
       y_counts = dplyr::filter(counts, condition == group_, Population == path_)$Count
 
-      log2FC = log2(median(y)) - log2(median(x))
-
-      if (any(!is.na(y)) && any(!is.na(x))) {
+      if (length(x) == 0 | length(y) == 0) {
+        # if one of the study groups has just NA's for the pct parent counts
+        log2FC = NA
+        p.value = NA
+      } else {
+        log2FC = log2(median(y)) - log2(median(x))
         test = wilcox.test(x, y, exact = FALSE)
         p.value = test$p.value
-      } else {
-        p.value = NA
       }
 
       stats_ = data.frame(path = path_,
@@ -221,8 +229,8 @@ generateStatistics = function(counts, summary, control, studyGroups) {
                           group_2_sd_pct_parent = sd(y),
                           group_1_median_count = median(x_counts),
                           group_2_median_count = median(y_counts),
-                          group_1_sd_count = median(x_counts),
-                          group_2_sd_count = median(y_counts),
+                          group_1_sd_count = sd(x_counts),
+                          group_2_sd_count = sd(y_counts),
                           group_1_total_cells = sum(x_counts),
                           group_2_total_cells = sum(y_counts))
 
