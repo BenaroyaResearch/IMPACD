@@ -152,7 +152,7 @@ processGatingPaths = function(summary, max_depth = 1) {
 
     idx = which(summary$depth>i_modifier)
 
-    summary[idx, column_name] = pathing[cbind(idx, max_depth+i_modifier)]
+    summary[idx, column_name] = pathing[cbind(idx, root_path_length+i_modifier)]
   }
 
   return(summary)
