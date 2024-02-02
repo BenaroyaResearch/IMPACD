@@ -168,3 +168,32 @@ stats = processGatingPaths(stats, max_depth = 2)
 report = modifierAnalysis(stats, counts, p_cutoff = 0.05)
 
 print(report$path)
+
+
+# ------------------------------------------------------------------------------
+# X. case: two modifies NEEDS TO BE DONE
+# ------------------------------------------------------------------------------
+# Expected output in report: "/R+/A+, "/R+/A+/B+"
+n = 30
+counts = rbind(
+  computeCounts("/R+/A+", "healthy", 0.1, 0.1, n), # same as modifier
+  computeCounts("/R+/A+", "disease", 0.2, 0.1, n), # same as modifier
+  computeCounts("/R+/B+", "healthy", 0.2, 0.1, n),
+  computeCounts("/R+/B+", "disease", 0.2, 0.1, n),
+  computeCounts("/R+/A+/B+", "healthy", 0.6, 0.1, n), # same as parent
+  computeCounts("/R+/A+/B+", "disease", 0.2, 0.1, n) # same as parent
+)
+
+# ------------------------------------------------------------------------------
+# Run analysis
+# ------------------------------------------------------------------------------
+summary = summarizePopulations(counts)
+summary = processGatingPaths(summary, max_depth = 2)
+
+
+stats = generateStatistics(counts, summary, "healthy", "disease")
+stats = processGatingPaths(stats, max_depth = 2)
+
+report = modifierAnalysis(stats, counts, p_cutoff = 0.05)
+
+print(report$path)
