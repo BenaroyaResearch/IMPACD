@@ -20,9 +20,9 @@
 #' # Generate statistics
 #' summary = summarizePopulations(counts)
 #' @export
-summarizePopulations = function(counts) {
+summarizePopulations = function(counts, verbose = T) {
 
-  message(paste0("Summarizing ", length(unique(counts$Population)), " unique populations."))
+  if (verbose) message(paste0("Summarizing ", length(unique(counts$Population)), " unique populations."))
 
   summary = counts %>%
     dplyr::select(name, path = Population, condition, Count, ParentCount, PercentParent)%>%
@@ -176,20 +176,23 @@ processGatingPaths = function(summary, max_depth = 1) {
 #' @examples
 #' stats = generateStatistics(counts, summary, "Control", "T1D")
 #' @export
-generateStatistics = function(counts, summary, control, studyGroups) {
+generateStatistics = function(counts, summary, control, studyGroups, verbose = T) {
   paths = unique(summary$path)
   nPops = length(paths)
   combined.stats <- vector("list", length = nPops)
 
-  message(paste0("Calculating statistics for ", nPops, " unique populations"))
   i = 0
-  pb = txtProgressBar(min = i, max = nPops, style = 3)
+  if (verbose) {
+    message(paste0("Calculating statistics for ", nPops, " unique populations"))
+    pb = txtProgressBar(min = i, max = nPops, style = 3)
+  }
 
   # calculate statistics by looping over populations
   # This could probably get turned into a summary/group_by step?
   for (ipath in 1:nPops) {
     i = i+1
-    setTxtProgressBar(pb, i)
+
+    if (verbose) setTxtProgressBar(pb, i)
 
     path_ = paths[i]
     # print(path_)
@@ -240,7 +243,7 @@ generateStatistics = function(counts, summary, control, studyGroups) {
     combined.stats[[ipath]] = stats
   }
 
-  close(pb)
+  if (verbose) close(pb)
 
   combined.stats.df = do.call(rbind, combined.stats)
 
@@ -269,7 +272,7 @@ generateStatistics = function(counts, summary, control, studyGroups) {
 #' @examples
 #' interestingPopulations = modifierAnalysis(stats, counts, p_cutoff = 0.05)
 #' @export
-modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
+modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05, verbose = T) {
 
   group_comparisons = distinct(dplyr::select(fullstats, group_1_name, group_2_name))
 
@@ -280,7 +283,7 @@ modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
     control_group = group_comparisons$group_1_name[icomparison]
     study_group = group_comparisons$group_2_name[icomparison]
 
-    message(paste0("Starting modifier analysis of ", control_group, " vs ", study_group))
+    if (verbose) message(paste0("Starting modifier analysis of ", control_group, " vs ", study_group))
 
     stats = dplyr::filter(fullstats, condition == study_group)
     report = c()
@@ -316,15 +319,15 @@ modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
     for (depth_ in max_depth:1) {
       nPops = nrow(subpopulations[[depth_]])
 
-      message(paste0("Modifier analysis of ", nPops, " subpopulations with p-value < ", p_cutoff, " at gating depth ", depth_, "."))
+      if (verbose) message(paste0("Modifier analysis of ", nPops, " subpopulations with p-value < ", p_cutoff, " at gating depth ", depth_, "."))
       iPop = 0
 
       if (nPops == 0) {next}
 
-      pb = txtProgressBar(min = iPop, max = nPops, style = 3)
+      if (verbose) pb = txtProgressBar(min = iPop, max = nPops, style = 3)
 
       for (iPop in 1:nPops) {
-        setTxtProgressBar(pb, iPop)
+        if (verbose) setTxtProgressBar(pb, iPop)
 
         population_ = subpopulations[[depth_]][iPop, ]
 
@@ -394,7 +397,9 @@ modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
           # We need to make sure that a) there is ONLY ONE parent that is significant and b) that this parent shows no difference in the distribution of values between itself and the subpopulation
           # We only want to report the parent, and remove the node from the report (in case it has been added previously by a higher gating depth)
 
-          # report = dplyr::filter(report, path != population_$path)
+          if (!is.null(report)) {
+            report = dplyr::filter(report, path != population_$path)
+          }
           # The parent is getting reported outside the if condition
 
           # For debugging reasons, I am also keeping track of subpopulations that get removed
@@ -409,7 +414,7 @@ modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
         }
 
       }
-      close(pb)
+      if (verbose) close(pb)
     }
 
     report = dplyr::select(report, -modifier_mask, -modifier_path)
@@ -417,7 +422,9 @@ modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05) {
 
     full_report = rbind(full_report, report)
 
-    removed_from_report = distinct(removed_from_report)
+    if (!is.null(removed_from_report)) {
+      removed_from_report = distinct(removed_from_report)
+    }
 
   }
   return(full_report)
