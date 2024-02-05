@@ -35,11 +35,13 @@ runModifierAnalysis = function(counts) {
   return(report$path)
 }
 
-
-n = 30
+# ------------------------------------------------------------------------------
+# Setup parameters that are used across all tests
+# ------------------------------------------------------------------------------
+n = 30 # number of samples that
 
 # ------------------------------------------------------------------------------
-# 0. case: only parent population is significant
+# 1. test: only parent population is significant
 # ------------------------------------------------------------------------------
 # Expected output in report: "/R+/A+"
 
@@ -55,6 +57,46 @@ counts = rbind(
 )
 
 
-test_that("one parent population", {
+test_that("modifier analysis: test 1", {
+  expect_equal(runModifierAnalysis(counts), expect)
+})
+
+# ------------------------------------------------------------------------------
+# 2. test: parent populations are not significant
+# ------------------------------------------------------------------------------
+# Expected output in report: "/R+/A+/B+"
+expect = c("/R+/A+/B+")
+
+counts = rbind(
+  computeCounts("/R+/A+", "healthy", 0.2, 0.1, n),
+  computeCounts("/R+/A+", "disease", 0.2, 0.1, n),
+  computeCounts("/R+/B+", "healthy", 0.4, 0.1, n),
+  computeCounts("/R+/B+", "disease", 0.4, 0.1, n),
+  computeCounts("/R+/A+/B+", "healthy", 0.6, 0.1, n),
+  computeCounts("/R+/A+/B+", "disease", 0.2, 0.1, n)
+)
+
+
+test_that("modifier analysis: test 2", {
+  expect_equal(runModifierAnalysis(counts), expect)
+})
+
+# ------------------------------------------------------------------------------
+# 3. test: one parent populations has the same distribution as the modifier
+# ------------------------------------------------------------------------------
+# Expected output in report: "/R+/B+"
+expect = c("/R+/B+")
+
+counts = rbind(
+  computeCounts("/R+/A+", "healthy", 0.4, 0.1, n),
+  computeCounts("/R+/A+", "disease", 0.4, 0.1, n),
+  computeCounts("/R+/B+", "healthy", 0.6, 0.1, n), # same as modifier
+  computeCounts("/R+/B+", "disease", 0.2, 0.1, n), # same as modifier
+  computeCounts("/R+/A+/B+", "healthy", 0.6, 0.1, n), # same as parent
+  computeCounts("/R+/A+/B+", "disease", 0.2, 0.1, n) # same as parent
+)
+
+
+test_that("modifier analysis: test 3", {
   expect_equal(runModifierAnalysis(counts), expect)
 })
