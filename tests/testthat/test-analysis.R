@@ -318,3 +318,64 @@ counts = rbind(
 test_that("modifier analysis: test 13", {
   expect_equal(sort(runModifierAnalysis(counts)), expect)
 })
+
+# ------------------------------------------------------------------------------
+# 14. test: only level 1 are significant
+# ------------------------------------------------------------------------------
+expect = sort(c("/R+/A+/C+", "/R+/B+/C+"))
+
+counts = rbind(
+  computeCounts("/R+/C+", "healthy", 0.2, 0.05, n),
+  computeCounts("/R+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/C+", "healthy", 0.8, 0.05, n),
+  computeCounts("/R+/A+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/B+/C+", "healthy", 0.8, 0.05, n),
+  computeCounts("/R+/B+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "healthy", 0.2, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "disease", 0.2, 0.05, n)
+)
+
+test_that("modifier analysis: test 14", {
+  expect_equal(sort(runModifierAnalysis(counts)), expect)
+})
+
+
+# ------------------------------------------------------------------------------
+# 15. test: level 2 are significant but different, and level 3 is significant too
+# ------------------------------------------------------------------------------
+expect = sort(c("/R+/A+/B+/C+", "/R+/A+/C+", "/R+/B+/C+"))
+
+counts = rbind(
+  computeCounts("/R+/C+", "healthy", 0.2, 0.05, n),
+  computeCounts("/R+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/C+", "healthy", 0.8, 0.05, n),
+  computeCounts("/R+/A+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/B+/C+", "healthy", 0.4, 0.05, n),
+  computeCounts("/R+/B+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "healthy", 0.4, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "disease", 0.2, 0.05, n)
+)
+
+test_that("modifier analysis: test 15", {
+  expect_equal(sort(runModifierAnalysis(counts)), expect)
+})
+
+# ------------------------------------------------------------------------------
+# 16. test: level 2 are significant but different, and level 3 is significant too, all different logFCs
+# ------------------------------------------------------------------------------
+expect = sort(c("/R+/A+/B+/C+", "/R+/A+/C+", "/R+/B+/C+"))
+
+counts = rbind(
+  computeCounts("/R+/C+", "healthy", 0.2, 0.05, n),
+  computeCounts("/R+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/C+", "healthy", 0.8, 0.05, n),
+  computeCounts("/R+/A+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/B+/C+", "healthy", 0.4, 0.05, n),
+  computeCounts("/R+/B+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "healthy", 0.2, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "disease", 0.5, 0.05, n)
+)
+
+test_that("modifier analysis: test 15", {
+  expect_equal(sort(runModifierAnalysis(counts)), expect)
+})
