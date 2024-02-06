@@ -298,3 +298,23 @@ counts = rbind(
 test_that("modifier analysis: test 12", {
   expect_equal(sort(runModifierAnalysis(counts)), expect)
 })
+
+# ------------------------------------------------------------------------------
+# 13. test: all are significant, all are different
+# ------------------------------------------------------------------------------
+expect = sort(c("/R+/C+", "/R+/A+/C+", "/R+/B+/C+", "/R+/A+/B+/C+"))
+
+counts = rbind(
+  computeCounts("/R+/C+", "healthy", 0.3, 0.05, n),
+  computeCounts("/R+/C+", "disease", 0.1, 0.05, n),
+  computeCounts("/R+/A+/C+", "healthy", 0.8, 0.05, n),
+  computeCounts("/R+/A+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/B+/C+", "healthy", 0.5, 0.05, n),
+  computeCounts("/R+/B+/C+", "disease", 0.1, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "healthy", 0.6, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "disease", 0.2, 0.05, n)
+)
+
+test_that("modifier analysis: test 13", {
+  expect_equal(sort(runModifierAnalysis(counts)), expect)
+})
