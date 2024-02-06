@@ -159,7 +159,6 @@ runModifierAnalysis = function(counts) {
 # ------------------------------------------------------------------------------
 # 6. test: three gates, only one is significant - variation 1
 # ------------------------------------------------------------------------------
-# Expected output in report: "/R+/C+"
 expect = sort(c("/R+/C+"))
 
 counts = rbind(
@@ -180,7 +179,6 @@ test_that("modifier analysis: test 6", {
 # ------------------------------------------------------------------------------
 # 7. test: three gates, only one is significant - variation 2
 # ------------------------------------------------------------------------------
-# Expected output in report: "/R+/B+/C+"
 expect = sort(c("/R+/B+/C+"))
 
 counts = rbind(
@@ -201,7 +199,6 @@ test_that("modifier analysis: test 7", {
 # ------------------------------------------------------------------------------
 # 8. test: three gates, only one is significant - variation 3
 # ------------------------------------------------------------------------------
-# Expected output in report: "/R+/B+/C+"
 expect = sort(c("/R+/A+/B+/C+"))
 
 counts = rbind(
@@ -223,7 +220,6 @@ test_that("modifier analysis: test 8", {
 # ------------------------------------------------------------------------------
 # 9. test: parent and leafs are significant, but not significant vs each other
 # ------------------------------------------------------------------------------
-# Expected output in report: "/R+/B+/C+"
 expect = sort(c("/R+/C+"))
 
 counts = rbind(
@@ -244,7 +240,6 @@ test_that("modifier analysis: test 9", {
 # ------------------------------------------------------------------------------
 # 10. test: parent and leafs are significant, and significant across each other
 # ------------------------------------------------------------------------------
-# Expected output in report: "/R+/B+/C+"
 expect = sort(c("/R+/C+", "/R+/A+/B+/C+"))
 
 counts = rbind(
@@ -259,5 +254,47 @@ counts = rbind(
 )
 
 test_that("modifier analysis: test 10", {
+  expect_equal(sort(runModifierAnalysis(counts)), expect)
+})
+
+
+# ------------------------------------------------------------------------------
+# 11. test: parent is not significant, leafs have same distribution
+# ------------------------------------------------------------------------------
+expect = sort(c("/R+/A+/C+"))
+
+counts = rbind(
+  computeCounts("/R+/C+", "healthy", 0.2, 0.05, n),
+  computeCounts("/R+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/C+", "healthy", 0.8, 0.05, n),
+  computeCounts("/R+/A+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/B+/C+", "healthy", 0.2, 0.05, n),
+  computeCounts("/R+/B+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "healthy", 0.8, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "disease", 0.2, 0.05, n)
+)
+
+test_that("modifier analysis: test 11", {
+  expect_equal(sort(runModifierAnalysis(counts)), expect)
+})
+
+
+# ------------------------------------------------------------------------------
+# 12. test: parent is not significant, leafs have different distribution
+# ------------------------------------------------------------------------------
+expect = sort(c("/R+/A+/C+", "/R+/A+/B+/C+"))
+
+counts = rbind(
+  computeCounts("/R+/C+", "healthy", 0.2, 0.05, n),
+  computeCounts("/R+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/C+", "healthy", 0.8, 0.05, n),
+  computeCounts("/R+/A+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/B+/C+", "healthy", 0.2, 0.05, n),
+  computeCounts("/R+/B+/C+", "disease", 0.2, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "healthy", 0.5, 0.05, n),
+  computeCounts("/R+/A+/B+/C+", "disease", 0.2, 0.05, n)
+)
+
+test_that("modifier analysis: test 12", {
   expect_equal(sort(runModifierAnalysis(counts)), expect)
 })
