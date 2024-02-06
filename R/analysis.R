@@ -290,16 +290,21 @@ modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05, verbose = T) {
 
     max_depth = max(stats$depth)
 
-    # Find all the nodes that we have
-    # First remove + and -, find uniques, and then readd +/- in regexp compatible form
-    nodes = unique(str_remove(dplyr::filter(stats, depth > 0)$terminal_node, "\\+|\\-"))
-    nodes = c(paste0(nodes, "\\+"), paste0(nodes, "\\-"))
-
     # Extract rood node, and turn it into a regexp compatible version
     root_node = stats$root_node[1]
     root_node = str_replace_all(root_node, "\\+", "\\\\+")
     root_node = str_replace_all(root_node, "\\-", "\\\\-")
     root_node = paste0("/", root_node)
+
+    # Find all the nodes that we have
+    # First remove + and -, find uniques, and then readd +/- in regexp compatible form
+    nodes = str_remove(stats$path, root_node)
+    nodes = paste(nodes, collapse = "")
+    nodes = str_remove_all(nodes, "\\+|\\-")
+    nodes = str_split(nodes, "/", simplify = T)
+    nodes = nodes[nodes != ""]
+    nodes = unique(nodes)
+    nodes = c(paste0(nodes, "\\+"), paste0(nodes, "\\-"))
 
     # Add a column modifier_path by removing the root node and also removing the terminal node
     stats$modifier_path = sub(root_node, "", stats$path)
@@ -415,6 +420,10 @@ modifierAnalysis = function(fullstats, counts, p_cutoff = 0.05, verbose = T) {
 
       }
       if (verbose) close(pb)
+    }
+
+    if (is.null(report)) {
+      return(NULL)
     }
 
     report = dplyr::select(report, -modifier_mask, -modifier_path)
