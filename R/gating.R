@@ -31,7 +31,7 @@ apply_gate = function(gs, gateName, gates, gate_metadata, node) {
       gs = add_new_node(gs, subgate_, gates, node)
     }
 
-  } else if (str_detect(gateName, "\\-")) {
+  } else if (str_detect(gateName, "\\-$")) {
     posGateName = flipGateName(gateName)
     gs = add_new_node(gs, posGateName, gates, node)
   }
